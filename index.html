@@ -566,13 +566,11 @@
   <div id="page-dashboard" class="page active">
     <div class="content">
 
-      <!-- Install Banner -->
       <div class="install-banner" id="installBanner">
-        ⚠ OP_WALLET not detected.
-        <a href="https://github.com/btc-vision/opwallet/releases" target="_blank">
-          Download OP_WALLET →
+        ⚠ OP_WALLET not detected. This is NOT UniSat — install OP_WALLET specifically:
+        <a href="https://chromewebstore.google.com/detail/opwallet/pmbjpcmaaladnfpacpmhmnfmpklgbdjb" target="_blank">
+          Install OP_WALLET from Chrome Web Store →
         </a>
-        to connect and stake.
       </div>
 
       <!-- STATS -->
@@ -768,43 +766,44 @@
     <button class="modal-close" onclick="closeModal('installModal')">✕</button>
     <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6;">
       OP_WALLET is the official Bitcoin wallet for OP_NET.
-      It must be installed as a browser extension to connect.
+      ⚠ This is <strong style="color:var(--neon-orange)">NOT UniSat</strong> —
+      make sure you install OP_WALLET specifically.
     </p>
     <div class="install-step">
       <div class="install-num">1</div>
       <div class="install-text">
-        Go to the official OP_WALLET releases page:<br>
-        <a href="https://github.com/btc-vision/opwallet/releases" target="_blank">
-          github.com/btc-vision/opwallet/releases →
+        Install OP_WALLET from Chrome Web Store:<br>
+        <a href="https://chromewebstore.google.com/detail/opwallet/pmbjpcmaaladnfpacpmhmnfmpklgbdjb" target="_blank">
+          OP_WALLET — Chrome Web Store →
         </a>
       </div>
     </div>
     <div class="install-step">
       <div class="install-num">2</div>
       <div class="install-text">
-        Download the latest <code style="color:var(--neon-cyan)">.zip</code> file.
-        Unzip it to a folder on your computer.
+        Click the OP_WALLET icon in your toolbar.
+        Create or import your Bitcoin wallet.
       </div>
     </div>
     <div class="install-step">
       <div class="install-num">3</div>
       <div class="install-text">
-        Open Chrome → <code style="color:var(--neon-cyan)">chrome://extensions/</code><br>
-        Enable <strong>Developer Mode</strong> → click <strong>Load unpacked</strong><br>
-        → select the unzipped folder.
+        Inside OP_WALLET click the network at the top →
+        switch to <strong style="color:var(--neon-cyan)">Testnet</strong>.
       </div>
     </div>
     <div class="install-step">
       <div class="install-num">4</div>
       <div class="install-text">
-        Reload this page. Then click <strong>CONNECT OP_WALLET</strong>.
+        Reload this page → click <strong>CONNECT OP_WALLET</strong>.
+        The OP_WALLET popup will open — not UniSat. ✅
       </div>
     </div>
     <div class="modal-actions">
       <button class="modal-btn modal-btn-cancel" onclick="closeModal('installModal')">CLOSE</button>
       <button class="modal-btn modal-btn-confirm"
-        onclick="window.open('https://github.com/btc-vision/opwallet/releases','_blank')">
-        DOWNLOAD →
+        onclick="window.open('https://chromewebstore.google.com/detail/opwallet/pmbjpcmaaladnfpacpmhmnfmpklgbdjb','_blank')">
+        INSTALL OP_WALLET →
       </button>
     </div>
   </div>
@@ -881,10 +880,23 @@ let currentAction = null;  // { type, poolId }
 // ══════════════════════════════════════════════════════════
 
 function getProvider() {
-  return (typeof window !== 'undefined' && window.unisat) ? window.unisat : null;
+  if (typeof window === 'undefined') return null;
+  // Prefer OP_WALLET's own window.opnet injection
+  // OP_WALLET also injects window.unisat for compatibility
+  // We check opnet first, then unisat, to make sure we use OP_WALLET not UniSat
+  if (window.opnet)  return window.opnet;
+  if (window.unisat && window.unisat.isOPWallet) return window.unisat;
+  // Last resort — if only unisat is present and no opnet, warn user
+  return null;
 }
 
-function isInstalled() { return !!getProvider(); }
+function isInstalled() {
+  // OP_WALLET injects window.opnet OR marks window.unisat with isOPWallet
+  if (typeof window === 'undefined') return false;
+  if (window.opnet) return true;
+  if (window.unisat && window.unisat.isOPWallet) return true;
+  return false;
+}
 
 async function handleWalletClick() {
   if (!isInstalled()) {
